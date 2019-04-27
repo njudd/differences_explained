@@ -8,12 +8,25 @@ output: html_document
 ```{r setup, include=FALSE, echo=F}
 knitr::opts_chunk$set(echo = TRUE)
 library(MASS); library(tidyverse);library(forcats); library(kableExtra)
-
 ```
 
 # Ways to measure change
 
-For the last 50+ years statisticians have been... lalala
+For the last 50+ years statisticians have been debating over how to measure change when you only have two time points. Two main methods have developed, the residual-change method (ANCOVA) and the subtraction method. These notes look at bias in the residual-change model when the first timepoint (t1) is not randomized. This is quite common in psychology, epidemiology and ecology. Some recent literature that really helped me wrap my head around it was [Castro-Schilo & Grimm (2018)](https://journals.sagepub.com/doi/pdf/10.1177/0265407517718387) & [van Breukelen(2006)](https://www.researchgate.net/profile/Gerard_Breukelen/publication/6890970_ORIGINAL_ARTICLES_ANCOVA_versus_change_from_baseline_had_more_power_in_randomized_studies_and_more_bias_in_nonrandomized_studies/links/57762de808ae1b18a7e17624/ORIGINAL-ARTICLES-ANCOVA-versus-change-from-baseline-had-more-power-in-randomized-studies-and-more-bias-in-nonrandomized-studies.pdf). Lots of the discussion centers around a categorical predictor (ANCOVA) yet this bias is also present when the data is continuous. See [*Simpson's Paradox, Lord's Paradox, and Suppression Effects are the same phenomenon–the reversal paradox*](https://ete-online.biomedcentral.com/articles/10.1186/1742-7622-5-2).
+
+<br>
+
+#### Residual-change model
+
+<br>
+
+${t2}_{i} \sim \alpha + \beta{t1}_{i} + \beta{IV}_{i}$
+
+#### Subtraction model
+$\Delta = t2 - t1$
+<br>
+$\Delta_{i} \sim {PGS}_{i}$
+
 
 #### Things to do
 - Change name on legends to what we plan on using
@@ -36,7 +49,7 @@ for (g in 1:length(group_diff)){
   p_lm <- c()
   p_delta <- c()
   
-  for (i in 1:10000){
+  for (i in 1:1000){
     dat <- data.frame(group=rep.int(c("A","B"), c(15,15)), time=rep.int(c("pre","pre"), c(15,15)), y = rnorm(30))
     dat_apost <- data.frame(group=rep.int(c("A"), c(15)), time=rep.int(c("post"), c(15)), y = rnorm(15, 5))
     dat_bpost <- data.frame(group=rep.int(c("B"), c(15)), time=rep.int(c("post"), c(15)), y = rnorm(15, group_diff_temp))
@@ -50,8 +63,8 @@ for (g in 1:length(group_diff)){
     p_delta <- c(p_delta, as.data.frame(summary(lm(delta ~ group, data = dat))[4])[2,4])
   }
   
-  df[g, 2] <- sum(p_lm< .05)/10000
-  df[g, 3] <- sum(p_delta< .05)/10000
+  df[g, 2] <- sum(p_lm< .05)/1000
+  df[g, 3] <- sum(p_delta< .05)/1000
 }
 
 true_groupeffect <- df %>% gather("group_diff")
@@ -136,7 +149,7 @@ for (w in 1:length(X1)){
   df[w,] <- NA
   df[w, 1] <- X1_temp
   p1 <- c()
-  for (i in 1:10000){
+  for (i in 1:1000){
     dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
                    Sigma = matrix(c(sigma1, X1_temp    ,     X3,
                                     X1_temp    , sigma2,     X2,
@@ -148,10 +161,10 @@ for (w in 1:length(X1)){
     
     p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1 + WM, data = dat))[4])[3,4])
   }
-  df[w,2] <- sum(p1 < .05)/10000
+  df[w,2] <- sum(p1 < .05)/1000
   # now subtraction
   p2 <- c()
-  for (i in 1:10000){
+  for (i in 1:1000){
     dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
                    Sigma = matrix(c(sigma1, X1_temp    ,     X3,
                                     X1_temp    , sigma2,     X2,
@@ -164,7 +177,7 @@ for (w in 1:length(X1)){
     
     p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
   }
-  df[w,3] <- sum(p2 < .05)/10000
+  df[w,3] <- sum(p2 < .05)/1000
 }
 
 cov_modt1 <- var(dat[c(2,1,3,4)]) # including the delta
@@ -209,7 +222,7 @@ for (w in 1:length(X1)){
   df[w,] <- NA
   df[w, 1] <- X1_temp
   p1 <- c()
-  for (i in 1:10000){
+  for (i in 1:1000){
     dat <- mvrnorm(100, mu = c(mu1, mu2),
                    Sigma = matrix(c(sigma1, X1_temp,
                                     X1_temp    , sigma2),
@@ -221,11 +234,11 @@ for (w in 1:length(X1)){
     dat$t2 <- dat$t2 + rnorm(length(dat$t2)) # my noise doesn't effect everyone equally?
     p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1 + WM, data = dat))[4])[3,4])
   }
-  df[w,2] <- sum(p1 < .05)/10000
+  df[w,2] <- sum(p1 < .05)/1000
   
   # now subtraction
   p2 <- c()
-  for (i in 1:10000){
+  for (i in 1:1000){
     dat <- mvrnorm(100, mu = c(mu1, mu2),
                    Sigma = matrix(c(sigma1, X1_temp,
                                     X1_temp    , sigma2),
@@ -240,7 +253,7 @@ for (w in 1:length(X1)){
     
     p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
   }
-  df[w,3] <- sum(p2 < .05)/10000
+  df[w,3] <- sum(p2 < .05)/1000
 }
 
 
@@ -260,7 +273,7 @@ ggplot(dat_plot_rich, aes(timepoint, val, col = subj)) + geom_point() + geom_lin
 ```
 
 ```{r rich get richer main effects plotting, echo=F}
-p.D
+p.B
 ```
 
 
