@@ -1,0 +1,345 @@
+---
+title: "Difference Measures Explained"
+author: "Nicholas Judd"
+date: "4/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE, echo=F}
+knitr::opts_chunk$set(echo = TRUE)
+library(MASS); library(tidyverse);library(forcats); library(kableExtra)
+
+```
+
+# Ways to measure change
+
+For the last 50+ years statisticians have been... lalala
+
+#### Things to do
+- Change name on legends to what we plan on using
+- Change colors for the two, and *make sure* they are consistant.
+- Write a small intro just discussing the two methods and you can relate them to their color for graphs.
+
+## Benefits of residual change with randomized groups
+
+```{r benefits of residual change with randomized groups, eval=T, echo=F}
+
+# true effect
+group_diff <- seq(5, 7, 0.1)
+df <- data.frame(group_diff = c(0), p_lm = c(0), p_d = c(0))
+
+for (g in 1:length(group_diff)){
+  group_diff_temp <- group_diff[g]
+  df[g,] <- NA
+  df[g, 1] <- group_diff_temp
+  
+  p_lm <- c()
+  p_delta <- c()
+  
+  for (i in 1:10000){
+    dat <- data.frame(group=rep.int(c("A","B"), c(15,15)), time=rep.int(c("pre","pre"), c(15,15)), y = rnorm(30))
+    dat_apost <- data.frame(group=rep.int(c("A"), c(15)), time=rep.int(c("post"), c(15)), y = rnorm(15, 5))
+    dat_bpost <- data.frame(group=rep.int(c("B"), c(15)), time=rep.int(c("post"), c(15)), y = rnorm(15, group_diff_temp))
+    dat <- rbind(dat, dat_apost, dat_bpost)
+    
+    dat$uuid <- as.character(rep(1:30,2))
+    
+    dat <- dat %>% spread(time, y)
+    dat$delta <- dat$post - dat$pre
+    p_lm <- c(p_lm, as.data.frame(summary(lm(post ~ pre + group, data = dat))[4])[3,4])
+    p_delta <- c(p_delta, as.data.frame(summary(lm(delta ~ group, data = dat))[4])[2,4])
+  }
+  
+  df[g, 2] <- sum(p_lm< .05)/10000
+  df[g, 3] <- sum(p_delta< .05)/10000
+}
+
+true_groupeffect <- df %>% gather("group_diff")
+colnames(true_groupeffect) <- c("type_of_test", "prop_of_sig")
+true_groupeffect$group_diff <- rep(group_diff-5, 2)
+
+groupeffect <- ggplot(true_groupeffect, aes(group_diff, prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + labs(title = "True group effect (n = 15 per groups, 10k sim)")
+
+dat <- data.frame(group=rep.int(c("Apre","Bpre"), c(1000,1000)), y = rnorm(2000))
+dat_apost <- data.frame(group=rep.int(c("A"), c(1000)), y = rnorm(1000, 5))
+dat <- rbind(dat, dat_apost)
+for (q in 1:length(group_diff)){
+  dat_bpost <- data.frame(group=rep.int(c(paste0("B", as.character(group_diff[q]))), c(1000)), y = rnorm(1000, group_diff[q]))
+  dat <- rbind(dat, dat_bpost)
+}
+
+dat <- dat[!dat$group %in% c("Apre", "Bpre"),]
+ggplot(dat, aes(y, fill = forcats::fct_rev(group))) + geom_density(adjust=1, alpha =0.1) + theme_minimal() + geom_vline(xintercept = 5, color = "red") + guides(fill=guide_legend(title="Simulated Data"))
+
+```
+
+```{r plot of group effect, echo=F}
+groupeffect + labs(title = "Enhanced power of the residual approach when T1 is randomized")
+```
+
+
+This is due to regression to the mean! (which is just a phenomenon that happens when you subtract 2 things)
+
+```{r regression to the mean, echo=F}
+t1 <- rnorm(100)
+t2 <- rnorm(100)
+d <- t2 - t1
+mat <- data.frame(t1 = t1, t2 = t2, d = d) # all in one df
+lm(d ~ t1, data = mat) # negative correlation regression to the mean
+lm(d ~ t2, data = mat)
+
+plot_df <- data.frame(timepoint = c(rep("t1", 100), rep("t2", 100)), val = c(t1,t2), subj = rep(1:100,2))
+
+ggplot(plot_df, aes(timepoint, val, col = subj)) + geom_point() + geom_line(aes(group = subj)) + theme_minimal() + theme(legend.position = "none") + labs(title = "illustration of regression to the mean (colorscale irrelevant)")
+
+```
+
+
+## Modifying the relationship between the covariate (t1) and the dependent variable (t2)
+
+
+```{r tables covvar t1 mod emperical, echo=F}
+df <- data.frame(t2 = c(1,"x",0.5), t1 = c("x",1,0.5), PGS = c(0.5,0.5,1))
+rownames(df) <- c("t2", "t1", "PGS")
+
+df %>%
+  kable() %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "float_right")
+
+```
+We are sampling from a multivariate normal probability distribution (see ?mvrnorm). This allows us to create multiple vectors of normally distrubted data with dependences (variance covariance matrix). All that is needed is the mean's, variances and corresponding covariances of the normally distributed data you would like to simulate. 
+
+<br>
+It makes logical sense to first see how the two methods develop when modifying the realtionship of T1 with T2, while holding the relationships of t2 with pgs and t1 with pgs constant (in this example 0.5). To the right you can see the *emperical* variance-covariance matrix, this of course changes with each simulation as we are drawing values from a density distribution. The value "x" represents the covariance we are modifying.
+
+
+
+
+
+```{r random data no delta effect modifying the relationship of t2 & t1 yet an effect from residuals, echo=F}
+mu1 <- 5
+mu2 <- 5
+mu_WM <- 5
+## variance
+sigma1 <- 1
+sigma2 <- 1
+sigma_WM <- 1
+## Correlations
+X1 <- seq(0, 1, 0.05)
+X1[21] <- 0.95
+X2 <- 0.5
+X3 <- 0.5
+
+df <- data.frame(test_cor = c(0), p_lm = c(0), p_d = c(0))
+for (w in 1:length(X1)){
+  X1_temp <- X1[w]
+  df[w,] <- NA
+  df[w, 1] <- X1_temp
+  p1 <- c()
+  for (i in 1:10000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
+                   Sigma = matrix(c(sigma1, X1_temp    ,     X3,
+                                    X1_temp    , sigma2,     X2,
+                                    X3    , X2    , sigma_WM),
+                                  ncol = 3, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "t2", "WM")
+    
+    p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1 + WM, data = dat))[4])[3,4])
+  }
+  df[w,2] <- sum(p1 < .05)/10000
+  # now subtraction
+  p2 <- c()
+  for (i in 1:10000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
+                   Sigma = matrix(c(sigma1, X1_temp    ,     X3,
+                                    X1_temp    , sigma2,     X2,
+                                    X3    , X2    , sigma_WM),
+                                  ncol = 3, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "t2", "WM")
+    dat$delta <- dat$t2 - dat$t1
+    
+    p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
+  }
+  df[w,3] <- sum(p2 < .05)/10000
+}
+
+cov_modt1 <- var(dat[c(2,1,3,4)]) # including the delta
+```
+
+```{r ploting bias results, echo = F}
+
+cor_bothT_with_WM <- df %>% gather("test_cor")
+colnames(cor_bothT_with_WM) <- c("type_of_test", "prop_of_sig")
+cor_bothT_with_WM$test_cor <- rep(X1, 2)
+
+p.5_bothWM <- ggplot(cor_bothT_with_WM, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
+
+p.5_bothWM
+```
+
+```{r showing the last varcov, echo=F, eval=F}
+# you can see regression to the mean in the delta and norelationship
+cov_modt1 %>%
+  kable() %>%
+  kable_styling(bootstrap_options = "striped", full_width = F, position = "float_right")
+
+```
+
+## Simulating a rich get richer effect
+
+In this example I am simulated multivariate normal data for only t1 and the PGS, changing the correlation between these two values. I than multiply t1 times 2 and add a bit of noise to simulate a rich get richer effect. Ofcourse this preserves the intial t1 correlation with PGS for t2.
+
+```{r rich get richer main effects, echo = F}
+mu1 <- 5
+mu2 <- 5
+## variance
+sigma1 <- 1
+sigma2 <- 1
+## Correlations
+X1 <- seq(0, 1, 0.05)
+X1[21] <- 0.95
+
+df <- data.frame(test_cor = c(0), p_lm = c(0), p_d = c(0))
+for (w in 1:length(X1)){
+  X1_temp <- X1[w]
+  df[w,] <- NA
+  df[w, 1] <- X1_temp
+  p1 <- c()
+  for (i in 1:10000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2),
+                   Sigma = matrix(c(sigma1, X1_temp,
+                                    X1_temp    , sigma2),
+                                  ncol = 2, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "WM")
+    dat$t2 <- dat$t1*2
+    dat$t2 <- dat$t2 + rnorm(length(dat$t2)) # my noise doesn't effect everyone equally?
+    p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1 + WM, data = dat))[4])[3,4])
+  }
+  df[w,2] <- sum(p1 < .05)/10000
+  
+  # now subtraction
+  p2 <- c()
+  for (i in 1:10000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2),
+                   Sigma = matrix(c(sigma1, X1_temp,
+                                    X1_temp    , sigma2),
+                                  ncol = 2, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "WM")
+    dat$t2 <- dat$t1*2
+    dat$t2 <- dat$t2 + rnorm(length(dat$t2))
+    
+    dat$delta <- dat$t2 - dat$t1
+    
+    p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
+  }
+  df[w,3] <- sum(p2 < .05)/10000
+}
+
+
+cor_D_wm <- df %>% gather("test_cor")
+colnames(cor_D_wm) <- c("type_of_test", "prop_of_sig")
+cor_D_wm$test_cor <- rep(X1, 2)
+
+p.B <- ggplot(cor_D_wm, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
+```
+
+Here is a plot of one simulation of rich get richer effects.
+```{r a plot of one sim, echo=F}
+dat_plot_rich <- data.frame(timepoint = c(rep("t1", 100), rep("t2", 100)), val = c(dat$t1, dat$t2), subj = rep(1:100,2))
+
+ggplot(dat_plot_rich, aes(timepoint, val, col = subj)) + geom_point() + geom_line(aes(group = subj)) + theme_minimal() + theme(legend.position = "none") + labs(title = "Illustration of rich get richer in one simulation (colorscale irrelevant)")
+
+```
+
+```{r rich get richer main effects plotting, echo=F}
+p.D
+```
+
+
+#### Other situations, hidden code
+
+```{r rich get richer interaction, echo=F, eval=F}
+mu1 <- 5
+mu2 <- 5
+## variance
+sigma1 <- 1
+sigma2 <- 1
+## Correlations
+X1 <- seq(0, 1, 0.05)
+X1[21] <- 0.95
+
+df <- data.frame(test_cor = c(0), p_lm = c(0), p_d = c(0))
+for (w in 1:length(X1)){
+  X1_temp <- X1[w]
+  df[w,] <- NA
+  df[w, 1] <- X1_temp
+  p1 <- c()
+  for (i in 1:1000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2),
+                   Sigma = matrix(c(sigma1, X1_temp,
+                                    X1_temp    , sigma2),
+                                  ncol = 2, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "WM")
+    dat$t2 <- dat$t1*2
+    dat$t2 <- dat$t2 + rnorm(length(dat$t2)) # my noise doesn't effect everyone equally?
+    p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1*WM, data = dat))[4])[4,4]) # 4,4 is the interaction
+  }
+  df[w,2] <- sum(p1 < .05)/1000
+  
+  # now subtraction
+  p2 <- c()
+  for (i in 1:1000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2),
+                   Sigma = matrix(c(sigma1, X1_temp,
+                                    X1_temp    , sigma2),
+                                  ncol = 2, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "WM")
+    dat$t2 <- dat$t1*2
+    dat$t2 <- dat$t2 + rnorm(length(dat$t2))
+    
+    dat$delta <- dat$t2 - dat$t1
+    
+    p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
+  }
+  df[w,3] <- sum(p2 < .05)/1000
+}
+
+
+cor_D_wm <- df %>% gather("test_cor")
+colnames(cor_D_wm) <- c("type_of_test", "prop_of_sig")
+cor_D_wm$test_cor <- rep(X1, 2)
+
+p.D <- ggplot(cor_D_wm, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
+
+```
+
+```{r tk simulation, eval=F}
+
+# this simulation ignores that you are sampling from a probability distribution
+# therefore each time you run it is will give you different results
+# futhermore there is a forcing of dependence
+
+for (i in seq(0.1,1, 0.1)){
+  PGS <- rnorm(1000,1)
+  t1 <- i*PGS + rnorm(1000,1)
+  t2 <- 0.3 + 1.2*t1 + 0.1*PGS + rnorm(1000,1)
+  print(i)
+  dat_tk <- data.frame( t2 = t2, t1 = t1, PGS = PGS)
+  #print(cov(dat_tk))
+  #print(cor(dat_tk))
+  #print(summary(lm(t2 ~ t1*PGS), data = dat_tk))
+}
+
+```
