@@ -19,16 +19,15 @@ For the last 50+ years statisticians have been debating over how to measure chan
 #### Residual-change model
 <br>
 ${t2}_{i} \sim \alpha + \beta{t1}_{i} + \beta{IV}_{i}$
-
+<br>
 #### Subtraction model
+<br>
 $\Delta = t2 - t1$
 <br>
 $\Delta_{i} \sim {PGS}_{i}$
-
-
+<br>
 #### Things to do
-- Change name on legends to what we plan on using
-- Change colors for the two, and *make sure* they are consistant.
+- Change name on legends, change colors for the two, and **make sure** they are consistant.
 - Write a small intro just discussing the two methods and you can relate them to their color for graphs.
 
 ## Benefits of residual change with randomized groups
@@ -202,7 +201,7 @@ cov_modt1 %>%
 ```
 
 
-```{r adding differing correlations for the IV}
+```{r adding differing correlations for the IV, echo=F}
 
 X2 <- 0.35
 X3 <- 0.35
@@ -290,7 +289,7 @@ df_alt_iv <- df %>%
 
 ```
 
-```{r plotting with different iv corrs}
+```{r plotting with different iv corrs, echo=F}
 
 cor_bothT_with_WM_changingIVcor <- df_alt_iv %>% gather("test_cor")
 colnames(cor_bothT_with_WM_changingIVcor) <- c("type_of_test", "prop_of_sig")
