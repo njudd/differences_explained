@@ -1,4 +1,4 @@
-# Differnce measures explained
+# Differnce measures
 <br>
 Comparing and contrasting ways to get delta measures from two time points. Either using the residual or subtraction method.
 See the Rmarkdown [HTML file](addlink) for a better explanation!
