@@ -7,7 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE, echo=F}
 knitr::opts_chunk$set(echo = TRUE)
-library(MASS); library(tidyverse);library(forcats); library(kableExtra)
+library(MASS); library(tidyverse);library(forcats); library(kableExtra);
+library(lavaan); library(foreach); library(doParallel)
 ```
 
 # Ways to measure change
@@ -16,16 +17,66 @@ For the last 50+ years statisticians have been debating over how to measure chan
 
 <br>
 
-#### Residual-change model
+#### Theoretical approach
+
+We will abide by the Neyman-Pearson approach to determine if an effect is present, regardless of its many pitfalls it is great for simulations as we can visualize the p-value distributions. By looking at the long run relative frequencies of p-values, we expect in the absence of an effect the p-value distribution should be uniform. Conversely, if a true effect is present we expect a heavily skewed distribution (alpha = 0.05).
+
+## Residual-change model
+
 <br>
+
 ${t2}_{i} \sim \alpha + \beta{t1}_{i} + \beta{IV}_{i}$
+
 <br>
-#### Subtraction model
+
+## Subtraction model
+
+#### Basic formalization
+
 <br>
 $\Delta = t2 - t1$
 <br>
 $\Delta_{i} \sim {PGS}_{i}$
 <br>
+
+#### Subtraction as regression (important for the Latent Change score model)
+
+${t2}_{i} = {t1}_{i} + \Delta_{i}$
+$\Delta_{i} = {t2}_{i} - {t1}_{i}$
+$\Delta_{i} \sim  (\beta_{0i} + \beta_{1i} * {T2}_{i} + \epsilon_{t2i}) - (\beta_{0i} + \beta_{1i} * {T1}_{i} + \epsilon_{t1i})$
+$\Delta_{i} \sim  \beta_{1i} * ({T2}_{i} - {T1}_{i}) + \epsilon_{T2i}- \epsilon_{T1i})$
+
+# Regression to the mean
+
+> "often referred to but less often understood  [Campbell & Erlebacher 1970, p. 192]."
+
+(add illustration from either article)
+
+Furby (1973) & Nesselroad et al. (1980) outline two situations in which regression to the mean is present:
+<br>
+1) regression due to error of measurement (or a 'relatively rare combinations of antecedent events')
+2) real differential change in subjects (henceforth termed 'catch up effects')
+
+<br>
+
+Cronbach & Furby's seminal article against the subtraction approach has had quite large implications on the field as a whole.
+
+> add strong quote from them
+
+
+In situtations that are not randomized control trials, do not have multiple measures or more than two timepoints regression to the mean is unavoidable.
+<br>
+Generally speaking their criticisms are warranted (due to regression to the mean) yet if we use the residual approach in non-randomized designs they actually do the exact opposite of what we want. By regressing T1 on T2 (in a non-randomized design) we are in essence forcing all individuals to have the same level in T1, this makes it impossible to find richer-get-richer effect or catch-up effects. Even worse, the original relationship between T2 and your independent variable of interest will remain. This quite easily can lead to the misinterpretation of rich-get-richer effects when they are absent in reality. Due to the influence of Cronhach & Furby's article many researchers fall into the trap of using T2 residualized change as a measure for change in non-randomized designs. I would personally recommend doing both, yet in non-randomized designs with two measurements and one task you have few options better than raw subtraction. If you have multiple indicators the Latent Change Score model can avoid this inherent limitation of subtraction through strong measurement invariance. 
+
+#### Latent change score model (strict measurement invariance)
+
+This type of model is powerful as it can avoid regression to the mean with only two timepoints through the use of multiple indicators.
+
+> "this multivariate SEM avoids the classical problems of using inherently unreliable difference scores and the random errors cannot create regression to the mean" ( McArdle, 2009, p. 588)
+
+> "The specification of a measurement model separates true score variance from unique variance (i.e., specific and error variance), and as a result, latent change scores are perfectly reliable." (Henk & Castro-Schilo, 2016, p. 182)
+
+
 #### Things to do
 - Change name on legends, change colors for the two, and **make sure** they are consistant.
 - Write a small intro just discussing the two methods and you can relate them to their color for graphs.
@@ -68,7 +119,7 @@ true_groupeffect <- df %>% gather("group_diff")
 colnames(true_groupeffect) <- c("type_of_test", "prop_of_sig")
 true_groupeffect$group_diff <- rep(group_diff-5, 2)
 
-groupeffect <- ggplot(true_groupeffect, aes(group_diff, prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + labs(title = "True group effect (n = 15 per groups, 10k sim)")
+groupeffect <- ggplot(true_groupeffect, aes(group_diff, prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + labs(title = "True group effect (n = 15 per groups, 10k sim)") + scale_color_manual(values=c("#EC407A", "#42A5F5"))
 
 dat <- data.frame(group=rep.int(c("Apre","Bpre"), c(1000,1000)), y = rnorm(2000))
 dat_apost <- data.frame(group=rep.int(c("A"), c(1000)), y = rnorm(1000, 5))
@@ -79,12 +130,12 @@ for (q in 1:length(group_diff)){
 }
 
 dat <- dat[!dat$group %in% c("Apre", "Bpre"),]
-ggplot(dat, aes(y, fill = forcats::fct_rev(group))) + geom_density(adjust=1, alpha =0.1) + theme_minimal() + geom_vline(xintercept = 5, color = "red") + guides(fill=guide_legend(title="Simulated Data"))
+ggplot(dat, aes(y, fill = forcats::fct_rev(group))) + geom_density(adjust=1, alpha =0.1) + theme_minimal() + geom_vline(xintercept = 5, color = "red") + guides(fill=guide_legend(title="Simulated Data")) + labs(title = "Simulated distributions of a mean effect", caption = "Distribution B (SD = 1) starts with the same mean as A yet moves away in 0.1 steps")
 
 ```
 
 ```{r plot of group effect, echo=F}
-groupeffect + labs(title = "Enhanced power of the residual approach when T1 is randomized")
+groupeffect + labs(title = "Enhanced power of the residual approach when T1 is randomized", caption = "Proportion of sig is the proportion of values below alpha (i.e. p < .05)")
 ```
 
 
@@ -100,7 +151,7 @@ lm(d ~ t2, data = mat)
 
 plot_df <- data.frame(timepoint = c(rep("t1", 100), rep("t2", 100)), val = c(t1,t2), subj = rep(1:100,2))
 
-ggplot(plot_df, aes(timepoint, val, col = subj)) + geom_point() + geom_line(aes(group = subj)) + theme_minimal() + theme(legend.position = "none") + labs(title = "illustration of regression to the mean (colorscale irrelevant)")
+ggplot(plot_df, aes(timepoint, val, group = subj, color = val)) + geom_point() + geom_line(aes(group = subj)) + theme_minimal() + theme(legend.position = "none") + labs(title = "Illustration of regression to the mean", caption = "There is no mean difference between t1 & t2") + geom_hline(yintercept= 0, colour = "red")
 
 ```
 
@@ -122,9 +173,68 @@ We are sampling from a multivariate normal probability distribution (see ?mvrnor
 <br>
 It makes logical sense to first see how the two methods develop when modifying the realtionship of T1 with T2, while holding the relationships of t2 with pgs and t1 with pgs constant (in this example 0.5). To the right you can see the *emperical* variance-covariance matrix, this of course changes with each simulation as we are drawing values from a density distribution. The value "x" represents the covariance we are modifying.
 
+```{r breaking the correlation between t1 & IV, echo=F}
+mu1 <- 5
+mu2 <- 5
+mu_WM <- 5
+## variance
+sigma1 <- 1
+sigma2 <- 1
+sigma_WM <- 1
+## Correlations
+X1 <- seq(0, 0.5, 0.05)
+#X1[21] <- 0.95
+X2 <- 0.5
+X3 <- 0
 
+df <- data.frame(test_cor = c(0), p_lm_0.5 = c(0), p_d_0.5 = c(0))
+for (w in 1:length(X1)){
+  X1_temp <- X1[w]
+  df[w,] <- NA
+  df[w, 1] <- X1_temp
+  p1 <- c()
+  for (i in 1:1000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
+                   Sigma = matrix(c(sigma1, X3    ,     X1_temp,
+                                    X3    , sigma2,     X2,
+                                    X1_temp    , X2    , sigma_WM),
+                                  ncol = 3, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "t2", "WM")
+    
+    p1 <- c(p1, as.data.frame(summary(lm(t2 ~ t1 + WM, data = dat))[4])[3,4])
+  }
+  df[w,2] <- sum(p1 < .05)/1000
+  # now subtraction
+  p2 <- c()
+  for (i in 1:1000){
+    dat <- mvrnorm(100, mu = c(mu1, mu2, mu_WM),
+                   Sigma = matrix(c(sigma1, X3    ,     X1_temp,
+                                    X3    , sigma2,     X2,
+                                    X1_temp    , X2    , sigma_WM),
+                                  ncol = 3, byrow = TRUE),
+                   empirical = F)
+    dat <- as.data.frame(dat)
+    colnames(dat) <- c("t1", "t2", "WM")
+    dat$delta <- dat$t2 - dat$t1
+    
+    p2 <- c(p2, as.data.frame(summary(lm(delta ~ WM, data = dat))[4])[2,4])
+  }
+  df[w,3] <- sum(p2 < .05)/1000
+}
+```
 
+```{r plotting the broken correlation between t1 & IV, echo=F}
+cor_t1_IV <- df %>% gather("test_cor")
+colnames(cor_t1_IV) <- c("type_of_test", "prop_of_sig")
+cor_t1_IV$test_cor <- rep(X1, 2)
 
+p.5_bothWM <- ggplot(cor_t1_IV, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
+
+p.5_bothWM
+
+```
 
 ```{r random data no delta effect modifying the relationship of t2 & t1 yet an effect from residuals, echo=F}
 mu1 <- 5
@@ -457,3 +567,378 @@ for (i in seq(0.1,1, 0.1)){
 }
 
 ```
+
+
+
+## Regression to the mean without measurement error (using latent variables)
+<br>
+By definition there needs to be shared variance between the latents (of time) and correlated covariance between the two tasks in time, therefore I will generate data via a CFA in lavaan. The data generated from a CFA will be entered into a Latent Change Score model with a covariance between T1 and change. We will simulate with a 3 task CFA over two timepoints.
+<br>
+
+Things that *could* change the simulations:
+1) variance (sd=1)
+2) central moment (mean=0)
+3) sample (n = 120)
+4) correlated covarince (of tasks between time)
+5) measurement invariance (factor loadings constrained, intercepts constrained and error variance constrained)
+
+
+
+You need to check model fit with data that is simulated not using strict measurement invariance.
+
+
+I will vary the covariance between the timepoints and generate data without a mean difference.
+<br>
+I will than test regression to the mean two ways:
+1) Via extracting factor scores and regressing t1 on the difference (delta score)
+
+2) Via inputting the data in a Latent Change Score model
+
+```{r cfa defining models}
+
+
+cfa_basic<-'
+####    measured on two occasions (T1-T2)
+COG_T1=~ .8*swm_between_errorsBL+.9*rvp_aBL+.7*prm_percent_correctBL   # This specifies the measurement model for COG_T1 
+COG_T2=~ .8*swm_between_errorsFU2+.9*rvp_aFU2+.7*prm_percent_correctFU2   # This specifies the measurement model for COG_T2  
+
+COG_T1 ~~ 0.8*COG_T2
+'
+
+cfa_strong_invariance <-'
+
+t1 =~ 0.5*prm_percent_correctBL + 0.4*swm_between_errorsBL + 0.6*rvp_aBL 
+t2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
+
+# Intercepts
+prm_percent_correctBL ~ 5*1
+swm_between_errorsBL ~ 10*1
+rvp_aBL ~ 33*1
+
+prm_percent_correctFU2 ~ 5*1
+swm_between_errorsFU2 ~ 10*1
+rvp_aFU2 ~ 33*1
+
+#prm_percent_correctFU2~equal("prm_percent_correctBL~ 5*1")*1 
+#swm_between_errorsFU2~equal("swm_between_errorsBL~10*1")*1 
+#rvp_aFU2~equal("rvp_aBL~33*1")*1 
+
+# Unique Variances
+prm_percent_correctBL ~~ 1*prm_percent_correctBL
+swm_between_errorsBL ~~ 1*swm_between_errorsBL
+rvp_aBL ~~ 1*rvp_aBL
+# making the t2 equal to what I made the t1
+prm_percent_correctFU2 ~~ 1*prm_percent_correctFU2
+swm_between_errorsFU2 ~~ 1*swm_between_errorsFU2
+rvp_aFU2 ~~ 1*rvp_aFU2
+
+#correlated cov
+prm_percent_correctBL ~~ 0.8*prm_percent_correctFU2
+swm_between_errorsBL ~~ 0.4*swm_between_errorsFU2
+rvp_aBL ~~ 0.7*rvp_aFU2
+
+# Latent Variable Means
+t1 ~ 0*1
+t2 ~ 1
+
+# Latent Variable Variances and Covariance
+t1 ~~ 1*t1
+t2 ~~ t2
+
+t1 ~~ 0.5*t2
+'
+
+
+cfa_strict_invariance <-'
+
+t1 =~ 0.5*prm_percent_correctBL + 0.4*swm_between_errorsBL + 0.6*rvp_aBL 
+t2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
+
+# Intercepts
+prm_percent_correctBL ~ 5*1
+swm_between_errorsBL ~ 10*1
+rvp_aBL ~ 33*1
+
+prm_percent_correctFU2 ~ 5*1
+swm_between_errorsFU2 ~ 10*1
+rvp_aFU2 ~ 33*1
+
+#prm_percent_correctFU2~equal("prm_percent_correctBL~ 5*1")*1 
+#swm_between_errorsFU2~equal("swm_between_errorsBL~10*1")*1 
+#rvp_aFU2~equal("rvp_aBL~33*1")*1 
+
+# Unique Variances
+prm_percent_correctBL ~~ 1*prm_percent_correctBL
+swm_between_errorsBL ~~ 1*swm_between_errorsBL
+rvp_aBL ~~ 1*rvp_aBL
+# making the t2 equal to what I made the t1
+prm_percent_correctFU2 ~~ equal("prm_percent_correctBL ~~ 1*prm_percent_correctBL")*prm_percent_correctFU2
+swm_between_errorsFU2 ~~ equal("swm_between_errorsBL ~~ 1*swm_between_errorsBL")*swm_between_errorsFU2
+rvp_aFU2 ~~ equal("rvp_aBL ~~ 1*rvp_aBL")*rvp_aFU2
+
+#correlated cov
+prm_percent_correctBL ~~ 0.8*prm_percent_correctFU2
+swm_between_errorsBL ~~ 0.4*swm_between_errorsFU2
+rvp_aBL ~~ 0.7*rvp_aFU2
+
+# Latent Variable Means
+t1 ~ 0*1
+t2 ~ 1
+
+# Latent Variable Variances and Covariance
+t1 ~~ 1*t1
+t2 ~~ t2
+
+t1 ~~ 0.5*t2
+'
+
+```
+
+```{r definining the LCS model with strict measurement invariance}
+
+LCS_forCFAsim <- '
+
+WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           # This specifies the measurement model for WM_T1 
+WM_T2 =~ 1*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2 + equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 
+
+swm_between_errorsBL ~~ swm_between_errorsFU2   # This allows residual covariance on indicator X1 across T1 and T2
+rvp_aBL ~~ rvp_aFU2   # This allows residual covariance on indicator X2 across T1 and T2
+prm_percent_correctBL ~~ prm_percent_correctFU2   # This allows residual covariance on indicator X3 across T1 and T2
+
+swm_between_errorsBL ~~ swm_between_errorsBL   # This allows residual variance on indicator X1 
+rvp_aBL ~~ rvp_aBL   # This allows residual variance on indicator X2
+prm_percent_correctBL ~~ prm_percent_correctBL   # This allows residual variance on indicator X3
+
+swm_between_errorsFU2 ~~ equal("swm_between_errorsBL~~swm_between_errorsBL")*swm_between_errorsFU2  # This allows residual variance on indicator X1 at T2 
+rvp_aFU2 ~~ equal("rvp_aBL~~rvp_aBL")*rvp_aFU2  # This allows residual variance on indicator X2 at T2 
+prm_percent_correctFU2 ~~ equal("prm_percent_correctBL~~prm_percent_correctBL")*prm_percent_correctFU2  # This allows residual variance on indicator X3 at T2
+
+WM_T2 ~ 1*WM_T1     # This parameter regresses WM_T2 perfectly on WM_T1
+dWM =~ 1*WM_T2     # This defines the latent change score factor as measured perfectly by scores on WM_T2
+dWM ~ 1             # This estimates the intercept of the change score 
+WM_T1 ~  1           # This estimates the intercept of WM_T1 
+
+WM_T2 ~ 0*1          # This constrains the intercept of WM_T2 to 0 (not needed)
+WM_T2 ~~ 0*WM_T2    # This fixes the variance of the WM_T2 to 0  (not needed)
+
+dWM ~~  dWM       # This estimates the variance of the change scores
+WM_T1 ~~ WM_T1    # This estimates the variance of the WM_T1 
+dWM ~~ WM_T1   # This estimates the NEU to COG coupling parameter and the NEU to NEU self-feedback
+
+swm_between_errorsBL~0*1                 # This constrains the intercept of X1 to 0 at T1
+rvp_aBL~1                   # This estimates the intercept of X2 at T1
+prm_percent_correctBL~1                   # This estimates the intercept of X3 at T1
+
+swm_between_errorsFU2~0*1                 # This constrains the intercept of X1 to 0 at T2
+rvp_aFU2~equal("rvp_aBL~1")*1   # This estimates the intercept of X2 at T2
+prm_percent_correctFU2~equal("prm_percent_correctBL~1")*1   # This estimates the intercept of X3 at T2
+'
+```
+
+```{r function for parallel simulation, eval=F}
+
+func_pvals <- function(model, s){
+  library(lavaan)
+  
+  simdatCFA <- simulateData(cfa_strict_invariance, sample.nobs = s, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+    
+  if (fit_LCS_forCFAsim@Fit@converged==F) {
+    pval_out <- NA
+  } else {
+    pval_out <- parameterestimates(fit_LCS_forCFAsim)[24,][,8]
+  }
+  return(pval_out)
+}
+
+func_rmsea <- function(model, s){
+  library(lavaan)
+  simdatCFA <- simulateData(model, sample.nobs = s, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+  
+  if (fit_LCS_forCFAsim@Fit@converged==F) {
+    rmsea <- NA
+  } else {
+    rmsea <- fitmeasures(fit_LCS_forCFAsim, fit.measures = c("rmsea"))
+  }
+  return(rmsea)
+}
+
+func_cfi <- function(model, s){
+  library(lavaan)
+  simdatCFA <- simulateData(model, sample.nobs = s, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+
+  if (fit_LCS_forCFAsim@Fit@converged==F) {
+    cfi <- NA
+  } else {
+    cfi <- fitmeasures(fit_LCS_forCFAsim, fit.measures = c("cfi"))
+  }  
+  return(cfi)
+}
+
+```
+
+```{r RMSEA simulating data parallel, eval = F}
+
+#setup parallel backend to use many processors
+cores=detectCores()
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_basic_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_rmsea(cfa_basic, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strong
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strong_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_rmsea(cfa_strong_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strict
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strict_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_rmsea(cfa_strict_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cfa_basic_rmsea <- as.data.frame(as.vector(cfa_basic_rmsea))
+colnames(cfa_basic_rmsea) <- "rmsea"
+cfa_strong_rmsea <- as.data.frame(as.vector(cfa_strong_rmsea))
+colnames(cfa_strong_rmsea) <- "rmsea"
+cfa_strict_rmsea <- as.data.frame(as.vector(cfa_strict_rmsea))
+colnames(cfa_strict_rmsea) <- "rmsea"
+
+
+rmsea_basic <- ggplot(cfa_basic_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+rmsea_strict <- ggplot(cfa_strong_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+rmsea_strong <- ggplot(cfa_strict_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+```
+
+
+```{r CFI simulating data parallel, eval = F}
+
+#setup parallel backend to use many processors
+cores=detectCores()
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_basic_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_cfi(cfa_basic, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strong
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strong_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_cfi(cfa_strong_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strict
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strict_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
+   tempMatrix = func_cfi(cfa_strict_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cfa_basic_cfi <- as.data.frame(as.vector(cfa_basic_cfi))
+colnames(cfa_basic_cfi) <- "cfi"
+cfa_strong_cfi <- as.data.frame(as.vector(cfa_strong_cfi))
+colnames(cfa_strong_cfi) <- "cfi"
+cfa_strict_cfi <- as.data.frame(as.vector(cfa_strict_cfi))
+colnames(cfa_strict_cfi) <- "cfi"
+
+
+cfi_basic <- ggplot(cfa_basic_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+cfi_strict <- ggplot(cfa_strong_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+cfi_strong <- ggplot(cfa_strict_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+```
+
+
+```{r p-val on self-feedback covariance simulating data parallel, eval = F}
+
+#setup parallel backend to use many processors
+cores=detectCores()
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_basic_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_basic, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strong
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strong_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_strong_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# now strict
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strict_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_strict_invariance, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cfa_basic_pvals <- as.data.frame(as.vector(cfa_basic_pvals))
+colnames(cfa_basic_pvals) <- "pvals"
+cfa_strong_pvals <- as.data.frame(as.vector(cfa_strong_pvals))
+colnames(cfa_strong_pvals) <- "pvals"
+cfa_strict_pvals <- as.data.frame(as.vector(cfa_strict_pvals))
+colnames(cfa_strict_pvals) <- "pvals"
+
+
+pvals_basic <- ggplot(cfa_basic_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+pvals_strict <- ggplot(cfa_strong_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+pvals_strong <- ggplot(cfa_strict_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+```
+
+
+
