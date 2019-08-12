@@ -5,10 +5,22 @@ date: "4/26/2019"
 output: html_document
 ---
 
+# TO DO
+
+- You need to make it very pedagogic, make it for someone that has never come across this issue (add figure of regression the the mean)
+
+
+
+
+
+
 ```{r setup, include=FALSE, echo=F}
 knitr::opts_chunk$set(echo = TRUE)
 library(MASS); library(tidyverse);library(forcats); library(kableExtra);
 library(lavaan); library(foreach); library(doParallel)
+
+# https://stats.stackexchange.com/questions/15713/is-it-valid-to-include-a-baseline-measure-as-control-variable-when-testing-the-e
+# good stackoverflow answer
 ```
 
 # Ways to measure change
@@ -65,6 +77,12 @@ Cronbach & Furby's seminal article against the subtraction approach has had quit
 
 
 In situtations that are not randomized control trials, do not have multiple measures or more than two timepoints regression to the mean is unavoidable.
+<br>
+Than you need to make a choice between two negative approaches:
+1) To not control for time-invariant predictors (t2 ~ iv == t2~ t1 + iv)
+2) To not control for regression to the mean
+
+
 <br>
 Generally speaking their criticisms are warranted (due to regression to the mean) yet if we use the residual approach in non-randomized designs they actually do the exact opposite of what we want. By regressing T1 on T2 (in a non-randomized design) we are in essence forcing all individuals to have the same level in T1, this makes it impossible to find richer-get-richer effect or catch-up effects. Even worse, the original relationship between T2 and your independent variable of interest will remain. This quite easily can lead to the misinterpretation of rich-get-richer effects when they are absent in reality. Due to the influence of Cronhach & Furby's article many researchers fall into the trap of using T2 residualized change as a measure for change in non-randomized designs. I would personally recommend doing both, yet in non-randomized designs with two measurements and one task you have few options better than raw subtraction. If you have multiple indicators the Latent Change Score model can avoid this inherent limitation of subtraction through strong measurement invariance. 
 
@@ -308,6 +326,33 @@ cov_modt1 %>%
   kable() %>%
   kable_styling(bootstrap_options = "striped", full_width = F, position = "float_right")
 
+```
+
+Word of warning: 
+It is quite easily to inadvertently create data with measurement invariance. Since we would like to simulate 3-way correlated data, its a quite straight forward approach to make t2 a product of t1 (plus noise). Yet this would than have the hidden assumption that the reliability of the test in t1 and t2 are exactly the same at picking up the 'true signal' with another IV. Therefore, when you regress t1 on t2 (t2 ~ t1) of course all of the signal from the IV is lost (since the inherent 'true signal' is from the same source) and the issue with time invariant covariates in the residual-approach is hidden.
+
+NOTE: I was accidently doing this with my rich-get-richer simulation?
+
+```{r data with perfect true signal reliability, echo=T}
+# here is some code showing true signal reliability
+
+incorrect_sim_holdvec <- c()
+
+for (i in 1:100) {
+t1 <- rnorm(100)
+IV <- t1*2 + rnorm(100, 0 , 2) # obviously not the best way to simulate data, since I am just widing my distribution to lessen the correlation
+#cor(t1, IV)
+
+t2 <- t1 + rnorm(100) # t2 is t1 with noise (you can also add real change by multiplication, yet the problem will remain)
+#cor.test(t2, IV) # there is still a correlation yet less
+
+df <- data.frame(t1 = t1, t2 = t2, IV = IV) # just adding the simulated data to a df
+
+incorrect_sim_holdvec <- c(incorrect_sim_holdvec, summary(lm(t2 ~ t1 + IV, data = df))$coefficients[3,4])
+}
+
+sum(incorrect_sim_holdvec < .05)/100
+# this result shows the correct amount of false-positives from a time invariant covariate
 ```
 
 
@@ -572,27 +617,11 @@ for (i in seq(0.1,1, 0.1)){
 
 ## Regression to the mean without measurement error (using latent variables)
 <br>
-By definition there needs to be shared variance between the latents (of time) and correlated covariance between the two tasks in time, therefore I will generate data via a CFA in lavaan. The data generated from a CFA will be entered into a Latent Change Score model with a covariance between T1 and change. We will simulate with a 3 task CFA over two timepoints.
+By definition there needs to be shared variance between the latents (of time) and correlated covariance between the two tasks in time, therefore I will generate data via a CFA in lavaan. The data generated from a CFA will be entered into a Latent Change Score (LCS) model with a covariance between T1 and change. We will simulate with a 3 task CFA over two timepoints. We will than break the strict measurement invariance of the LCS model and show how this leads to a significant self-feedback parameter.
 <br>
-
-Things that *could* change the simulations:
-1) variance (sd=1)
-2) central moment (mean=0)
-3) sample (n = 120)
-4) correlated covarince (of tasks between time)
-5) measurement invariance (factor loadings constrained, intercepts constrained and error variance constrained)
-
-
-
-You need to check model fit with data that is simulated not using strict measurement invariance.
-
-
 I will vary the covariance between the timepoints and generate data without a mean difference.
+* will you still do this?
 <br>
-I will than test regression to the mean two ways:
-1) Via extracting factor scores and regressing t1 on the difference (delta score)
-
-2) Via inputting the data in a Latent Change Score model
 
 ```{r cfa defining models}
 
