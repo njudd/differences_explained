@@ -1,5 +1,6 @@
 ---
 title: "Difference Measures Explained"
+subtitle: "Damned if you do damned if you don't!"
 author: "Nicholas Judd"
 date: "4/26/2019"
 output: html_document
@@ -8,10 +9,15 @@ output: html_document
 # TO DO
 
 - You need to make it very pedagogic, make it for someone that has never come across this issue (add figure of regression the the mean)
+- Make a list of good resources (Penn stats dep, stack overflow answer & Justice warrior paper (1 & 2), kievet & strict CFA guy)
+- Change name on legends, change colors for the two, and **make sure** they are consistant.
+- Write a small intro just discussing the two methods and you can relate them to their color for graphs.
 
-
-
-
+# Questions for Timo
+- how to simulate a true rich-get-richer false-positive in the residual-approach
+- best way to simulate LCS model breaking by loosing measurement invariance (I can do this for weak yet I don't know how to for strong)
+- directionality on false-positives
+- could ask him about the non-sensical simulation
 
 
 ```{r setup, include=FALSE, echo=F}
@@ -25,7 +31,7 @@ library(lavaan); library(foreach); library(doParallel)
 
 # Ways to measure change
 
-For the last 50+ years statisticians have been debating over how to measure change when you only have two time points. Two main methods have developed, the residual-change method (ANCOVA) and the subtraction method. These notes look at bias in the residual-change model when the first timepoint (t1) is not randomized. This is quite common in psychology, epidemiology and ecology. Some recent literature that really helped me wrap my head around it was [Castro-Schilo & Grimm (2018)](https://journals.sagepub.com/doi/pdf/10.1177/0265407517718387) & [van Breukelen(2006)](https://www.researchgate.net/profile/Gerard_Breukelen/publication/6890970_ORIGINAL_ARTICLES_ANCOVA_versus_change_from_baseline_had_more_power_in_randomized_studies_and_more_bias_in_nonrandomized_studies/links/57762de808ae1b18a7e17624/ORIGINAL-ARTICLES-ANCOVA-versus-change-from-baseline-had-more-power-in-randomized-studies-and-more-bias-in-nonrandomized-studies.pdf). Lots of the discussion centers around a categorical predictor (ANCOVA) yet this bias is also present when the data is continuous. See [*Simpson's Paradox, Lord's Paradox, and Suppression Effects are the same phenomenon–the reversal paradox*](https://ete-online.biomedcentral.com/articles/10.1186/1742-7622-5-2).
+For the last 50+ years statisticians have been debating over how to measure change when you only have two time points. Two main methods have developed, the residual-change method (ANCOVA) and the subtraction method. These notes look at bias in the residual-change model when the first timepoint (t1) is not randomized, as this effect is much less highlighted than regression to the mean. This technique is quite common in psychology, epidemiology and ecology. Some recent literature that really helped me wrap my head around it was [Castro-Schilo & Grimm (2018)](https://journals.sagepub.com/doi/pdf/10.1177/0265407517718387) & [van Breukelen(2006)](https://www.researchgate.net/profile/Gerard_Breukelen/publication/6890970_ORIGINAL_ARTICLES_ANCOVA_versus_change_from_baseline_had_more_power_in_randomized_studies_and_more_bias_in_nonrandomized_studies/links/57762de808ae1b18a7e17624/ORIGINAL-ARTICLES-ANCOVA-versus-change-from-baseline-had-more-power-in-randomized-studies-and-more-bias-in-nonrandomized-studies.pdf). Lots of the discussion centers around a categorical predictor (ANCOVA) yet this bias is also present when the data is continuous. See [*Simpson's Paradox, Lord's Paradox, and Suppression Effects are the same phenomenon–the reversal paradox*](https://ete-online.biomedcentral.com/articles/10.1186/1742-7622-5-2).
 
 <br>
 
@@ -58,7 +64,7 @@ $\Delta_{i} = {t2}_{i} - {t1}_{i}$
 $\Delta_{i} \sim  (\beta_{0i} + \beta_{1i} * {T2}_{i} + \epsilon_{t2i}) - (\beta_{0i} + \beta_{1i} * {T1}_{i} + \epsilon_{t1i})$
 $\Delta_{i} \sim  \beta_{1i} * ({T2}_{i} - {T1}_{i}) + \epsilon_{T2i}- \epsilon_{T1i})$
 
-# Regression to the mean
+### Regression to the mean
 
 > "often referred to but less often understood  [Campbell & Erlebacher 1970, p. 192]."
 
@@ -76,30 +82,32 @@ Cronbach & Furby's seminal article against the subtraction approach has had quit
 > add strong quote from them
 
 
-In situtations that are not randomized control trials, do not have multiple measures or more than two timepoints regression to the mean is unavoidable.
+In situtations where the relationship dependent variable (change variable) cannot be randomized from the independent variable.
 <br>
 Than you need to make a choice between two negative approaches:
-1) To not control for time-invariant predictors (t2 ~ iv == t2~ t1 + iv)
-2) To not control for regression to the mean
-
+<br>
+1) To not control for regression to the mean (not as dire as previously predicted).
+2) To not control for time-invariant predictors (t2 ~ iv == t2~ t1 + iv)
+<br>
+Using the residual-approach (point 2) will lead to Type-1 errors (false-positives), therefore should be avoided at all costs.
 
 <br>
-Generally speaking their criticisms are warranted (due to regression to the mean) yet if we use the residual approach in non-randomized designs they actually do the exact opposite of what we want. By regressing T1 on T2 (in a non-randomized design) we are in essence forcing all individuals to have the same level in T1, this makes it impossible to find richer-get-richer effect or catch-up effects. Even worse, the original relationship between T2 and your independent variable of interest will remain. This quite easily can lead to the misinterpretation of rich-get-richer effects when they are absent in reality. Due to the influence of Cronhach & Furby's article many researchers fall into the trap of using T2 residualized change as a measure for change in non-randomized designs. I would personally recommend doing both, yet in non-randomized designs with two measurements and one task you have few options better than raw subtraction. If you have multiple indicators the Latent Change Score model can avoid this inherent limitation of subtraction through strong measurement invariance. 
+###### More Nuisance and explanation
+Generally speaking Cronbach & Furby's criticisms are warranted (due to regression to the mean) yet if we use the residual approach in non-randomized designs they actually do the exact opposite of what we want. By regressing T1 on T2 (in a non-randomized design) we are in essence forcing all individuals to have the same level in T1, this makes it impossible to find richer-get-richer effect or catch-up effects. Even worse, the original relationship between T2 and your independent variable of interest will remain. This quite easily can lead to the misinterpretation of rich-get-richer effects when they are absent in reality. Due to the influence of Cronhach & Furby's article many researchers fall into the trap of using T2 residualized change as a measure for change in non-randomized designs. I would personally recommend doing both, yet in non-randomized designs with two measurements and one task you have few options better than raw subtraction. If you have multiple indicators the Latent Change Score model can avoid this inherent limitation of subtraction through strong measurement invariance. 
 
 #### Latent change score model (strict measurement invariance)
 
-This type of model is powerful as it can avoid regression to the mean with only two timepoints through the use of multiple indicators.
+This type of model is powerful as it can avoid regression to the mean with only two timepoints through the use of multiple indicators. You need to have strict measurement invariance as this essentially makes the two time points the same before subtracting them.
 
 > "this multivariate SEM avoids the classical problems of using inherently unreliable difference scores and the random errors cannot create regression to the mean" ( McArdle, 2009, p. 588)
 
 > "The specification of a measurement model separates true score variance from unique variance (i.e., specific and error variance), and as a result, latent change scores are perfectly reliable." (Henk & Castro-Schilo, 2016, p. 182)
 
 
-#### Things to do
-- Change name on legends, change colors for the two, and **make sure** they are consistant.
-- Write a small intro just discussing the two methods and you can relate them to their color for graphs.
 
 ## Benefits of residual change with randomized groups
+
+We are simulating a thousand times entirely random data with two time points and two groups (n = 15 per group). Both groups start with a mean of 5 (sd=1) and than we redo the simulation adding 0.1 on the B group distribution untill it reaches 7, which would be a 2 point difference between the groups. Below we visualize these distributions, which less noise (n = 1000).
 
 ```{r benefits of residual change with randomized groups, eval=T, echo=F}
 
@@ -191,7 +199,11 @@ We are sampling from a multivariate normal probability distribution (see ?mvrnor
 <br>
 It makes logical sense to first see how the two methods develop when modifying the realtionship of T1 with T2, while holding the relationships of t2 with pgs and t1 with pgs constant (in this example 0.5). To the right you can see the *emperical* variance-covariance matrix, this of course changes with each simulation as we are drawing values from a density distribution. The value "x" represents the covariance we are modifying.
 
-```{r breaking the correlation between t1 & IV, echo=F}
+```{r stupid-sim breaking the correlation between t1 & IV, echo=F, eval=F}
+
+# this simulation makes little sense since it assumes no relationship between t1 & t2
+
+
 mu1 <- 5
 mu2 <- 5
 mu_WM <- 5
@@ -203,7 +215,7 @@ sigma_WM <- 1
 X1 <- seq(0, 0.5, 0.05)
 #X1[21] <- 0.95
 X2 <- 0.5
-X3 <- 0
+X3 <- 0 # this is the part that makes the simulation non-realistic 
 
 df <- data.frame(test_cor = c(0), p_lm_0.5 = c(0), p_d_0.5 = c(0))
 for (w in 1:length(X1)){
@@ -243,7 +255,12 @@ for (w in 1:length(X1)){
 }
 ```
 
-```{r plotting the broken correlation between t1 & IV, echo=F}
+```{r stupid-sim plotting the broken correlation between t1 & IV, echo=F, eval=F}
+
+# again this simulation is wonky since it assumes no relationship between t1 & t2
+# it tells you as you hold t2 & WM at 0.5, and lessen the correlation betwen t1 & WM the effect will come up in the delta
+# you could ask Kimo about this sim
+
 cor_t1_IV <- df %>% gather("test_cor")
 colnames(cor_t1_IV) <- c("type_of_test", "prop_of_sig")
 cor_t1_IV$test_cor <- rep(X1, 2)
@@ -305,7 +322,7 @@ for (w in 1:length(X1)){
   df[w,3] <- sum(p2 < .05)/1000
 }
 
-cov_modt1 <- var(dat[c(2,1,3,4)]) # including the delta
+cov_modt1 <- var(dat[c(2,1,3,4)]) # including the delta, changing the order
 ```
 
 
@@ -317,23 +334,20 @@ cor_bothT_with_WM$test_cor <- rep(X1, 2)
 
 p.5_bothWM <- ggplot(cor_bothT_with_WM, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
 
-p.5_bothWM
+p.5_bothWM + labs(title = "Residual method false-positives", x = "Correlation between 1st and 2nd test", y = "Proportion of Significant (sim = 1000)")
 ```
 
 ```{r showing the last varcov, echo=F, eval=F}
 # you can see regression to the mean in the delta and norelationship
 cov_modt1 %>%
-  kable() %>%
+  kable(caption = "Example covariance matrix of the last simulation") %>%
   kable_styling(bootstrap_options = "striped", full_width = F, position = "float_right")
 
 ```
 
-Word of warning: 
-It is quite easily to inadvertently create data with measurement invariance. Since we would like to simulate 3-way correlated data, its a quite straight forward approach to make t2 a product of t1 (plus noise). Yet this would than have the hidden assumption that the reliability of the test in t1 and t2 are exactly the same at picking up the 'true signal' with another IV. Therefore, when you regress t1 on t2 (t2 ~ t1) of course all of the signal from the IV is lost (since the inherent 'true signal' is from the same source) and the issue with time invariant covariates in the residual-approach is hidden.
 
-NOTE: I was accidently doing this with my rich-get-richer simulation?
 
-```{r data with perfect true signal reliability, echo=T}
+```{r data with perfect true signal reliability, echo=T, eval=F}
 # here is some code showing true signal reliability
 
 incorrect_sim_holdvec <- c()
@@ -355,8 +369,11 @@ sum(incorrect_sim_holdvec < .05)/100
 # this result shows the correct amount of false-positives from a time invariant covariate
 ```
 
+#### Simulating how this effect is dependent upon the relationships with the IV
 
-```{r adding differing correlations for the IV, echo=F}
+Now I am changing the 'true' correlations between the tests at both timepoint with the IV while also altering the relationship between the two timepoints. The two timepoints are the same test so we are essentially seeing what happens when we change how well this test taps into another test (IV). 
+
+```{r adding differing correlations between the tests and the IV, echo=F}
 
 X2 <- 0.35
 X3 <- 0.35
@@ -450,7 +467,7 @@ cor_bothT_with_WM_changingIVcor <- df_alt_iv %>% gather("test_cor")
 colnames(cor_bothT_with_WM_changingIVcor) <- c("type_of_test", "prop_of_sig")
 cor_bothT_with_WM_changingIVcor$test_cor <- rep(X1, 2)
 
-multiple_ivcors <- ggplot(cor_bothT_with_WM_changingIVcor, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse() + labs(title = "How the residual method changes (with IV cor changing)")
+multiple_ivcors <- ggplot(cor_bothT_with_WM_changingIVcor, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse() + labs(title = "How the residual method changes (with IV cor changing)", x = "Correlation between 1st and 2nd test", y = "Proportion of Significant (sim = 1000)")
 
 multiple_ivcors
 
@@ -458,9 +475,9 @@ multiple_ivcors
 
 
 
-## Simulating a rich get richer effect
+#### Simulating a rich get richer effect
 
-In this example I am simulated multivariate normal data for only t1 and the PGS, changing the correlation between these two values. I than multiply t1 times 2 and add a bit of noise to simulate a rich get richer effect. Ofcourse this preserves the intial t1 correlation with PGS for t2.
+In this example I am simulated multivariate normal data for only t1 and the PGS, changing the correlation between these two values. I than multiply t1 times 2 and add a bit of noise to simulate a rich get richer effect. Ofcourse this preserves the intial t1 correlation with PGS for t2. This simulation accidently removes the false-positives (from the t2 ~ IV relationship) in the residual approach since T2 is a product of T1, therefore the residual-approach gets rid of all the T2 ~ IV signal.
 
 ```{r rich get richer main effects, echo = F}
 mu1 <- 5
@@ -520,20 +537,21 @@ cor_D_wm$test_cor <- rep(X1, 2)
 p.B <- ggplot(cor_D_wm, aes(test_cor,prop_of_sig, col = type_of_test)) + geom_point() + geom_smooth() + theme_minimal() + scale_x_reverse()
 ```
 
-Here is a plot of one simulation of rich get richer effects.
 ```{r a plot of one sim, echo=F}
 dat_plot_rich <- data.frame(timepoint = c(rep("t1", 100), rep("t2", 100)), val = c(dat$t1, dat$t2), subj = rep(1:100,2))
 
-ggplot(dat_plot_rich, aes(timepoint, val, col = subj)) + geom_point() + geom_line(aes(group = subj)) + theme_minimal() + theme(legend.position = "none") + labs(title = "Illustration of rich get richer in one simulation (colorscale irrelevant)")
+ggplot(dat_plot_rich, aes(timepoint, val, group = subj)) + geom_point(alpha = 0.1) + geom_line(aes(group = subj), color = "blue", alpha = 0.3) + theme_minimal() + theme(legend.position = "none") + labs(title = "Illustration of rich get richer in one simulation (colorscale irrelevant)")
+
+
 
 ```
 
 ```{r rich get richer main effects plotting, echo=F}
-p.B
+p.B + labs(title = "Rich get richer effects", x = "Correlation between 1st and 2nd test", y = "Proportion of Significant (sim = 1000)")
 ```
 
+The delta analysis shows a true rich-get-richer since the T1 value was multiplied by two. Normally the residual-change analysis would show a false-positive effect yet it does not since in these simluations there is no unique variance between t2 and the IV not explained by t1 and the IV. 
 
-#### Other situations, hidden code
 
 ```{r rich get richer interaction, echo=F, eval=F}
 mu1 <- 5
@@ -614,7 +632,6 @@ for (i in seq(0.1,1, 0.1)){
 ```
 
 
-
 ## Regression to the mean without measurement error (using latent variables)
 <br>
 By definition there needs to be shared variance between the latents (of time) and correlated covariance between the two tasks in time, therefore I will generate data via a CFA in lavaan. The data generated from a CFA will be entered into a Latent Change Score (LCS) model with a covariance between T1 and change. We will simulate with a 3 task CFA over two timepoints. We will than break the strict measurement invariance of the LCS model and show how this leads to a significant self-feedback parameter.
@@ -623,15 +640,58 @@ I will vary the covariance between the timepoints and generate data without a me
 * will you still do this?
 <br>
 
-```{r cfa defining models}
-
+```{r cfa defining strict invariance to simulate data}
 
 cfa_basic<-'
 ####    measured on two occasions (T1-T2)
 COG_T1=~ .8*swm_between_errorsBL+.9*rvp_aBL+.7*prm_percent_correctBL   # This specifies the measurement model for COG_T1 
-COG_T2=~ .8*swm_between_errorsFU2+.9*rvp_aFU2+.7*prm_percent_correctFU2   # This specifies the measurement model for COG_T2  
+COG_T2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
 
 COG_T1 ~~ 0.8*COG_T2
+'
+
+
+cfa_strict_invariance <-'
+
+t1 =~ 0.5*prm_percent_correctBL + 0.4*swm_between_errorsBL + 0.6*rvp_aBL 
+t2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
+
+# Intercepts
+prm_percent_correctBL ~ 1*1
+swm_between_errorsBL ~ 1*1
+rvp_aBL ~ 1*1
+
+prm_percent_correctFU2 ~ 1*1
+swm_between_errorsFU2 ~ 1*1
+rvp_aFU2 ~ 1*1
+
+#prm_percent_correctFU2~equal("prm_percent_correctBL~ 5*1")*1 
+#swm_between_errorsFU2~equal("swm_between_errorsBL~10*1")*1 
+#rvp_aFU2~equal("rvp_aBL~33*1")*1 
+
+# Unique Variances
+prm_percent_correctBL ~~ 1*prm_percent_correctBL
+swm_between_errorsBL ~~ 1*swm_between_errorsBL
+rvp_aBL ~~ 1*rvp_aBL
+# making the t2 equal to what I made the t1
+prm_percent_correctFU2 ~~ equal("prm_percent_correctBL ~~ 1*prm_percent_correctBL")*prm_percent_correctFU2
+swm_between_errorsFU2 ~~ equal("swm_between_errorsBL ~~ 1*swm_between_errorsBL")*swm_between_errorsFU2
+rvp_aFU2 ~~ equal("rvp_aBL ~~ 1*rvp_aBL")*rvp_aFU2
+
+#correlated covariance
+prm_percent_correctBL ~~ 0.8*prm_percent_correctFU2
+swm_between_errorsBL ~~ 0.4*swm_between_errorsFU2
+rvp_aBL ~~ 0.7*rvp_aFU2
+
+# Latent Variable Means
+t1 ~ 0*1
+t2 ~ 1
+
+# Latent Variable Variances and Covariance
+t1 ~~ 1*t1
+t2 ~~ t2
+
+t1 ~~ 0.5*t2 # the covariance between the two time points
 '
 
 cfa_strong_invariance <-'
@@ -640,17 +700,13 @@ t1 =~ 0.5*prm_percent_correctBL + 0.4*swm_between_errorsBL + 0.6*rvp_aBL
 t2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
 
 # Intercepts
-prm_percent_correctBL ~ 5*1
-swm_between_errorsBL ~ 10*1
-rvp_aBL ~ 33*1
+prm_percent_correctBL ~ 1*1
+swm_between_errorsBL ~ 1*1
+rvp_aBL ~ 1*1
 
-prm_percent_correctFU2 ~ 5*1
-swm_between_errorsFU2 ~ 10*1
-rvp_aFU2 ~ 33*1
-
-#prm_percent_correctFU2~equal("prm_percent_correctBL~ 5*1")*1 
-#swm_between_errorsFU2~equal("swm_between_errorsBL~10*1")*1 
-#rvp_aFU2~equal("rvp_aBL~33*1")*1 
+prm_percent_correctFU2 ~ 1*1
+swm_between_errorsFU2 ~ 1*1
+rvp_aFU2 ~ 1*1
 
 # Unique Variances
 prm_percent_correctBL ~~ 1*prm_percent_correctBL
@@ -677,33 +733,28 @@ t2 ~~ t2
 t1 ~~ 0.5*t2
 '
 
-
-cfa_strict_invariance <-'
+cfa_weak_invariance <-'
 
 t1 =~ 0.5*prm_percent_correctBL + 0.4*swm_between_errorsBL + 0.6*rvp_aBL 
 t2 =~ equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 + equal("WM_T1=~swm_between_errorsBL")*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2
-
-# Intercepts
-prm_percent_correctBL ~ 5*1
-swm_between_errorsBL ~ 10*1
-rvp_aBL ~ 33*1
-
-prm_percent_correctFU2 ~ 5*1
-swm_between_errorsFU2 ~ 10*1
-rvp_aFU2 ~ 33*1
-
-#prm_percent_correctFU2~equal("prm_percent_correctBL~ 5*1")*1 
-#swm_between_errorsFU2~equal("swm_between_errorsBL~10*1")*1 
-#rvp_aFU2~equal("rvp_aBL~33*1")*1 
 
 # Unique Variances
 prm_percent_correctBL ~~ 1*prm_percent_correctBL
 swm_between_errorsBL ~~ 1*swm_between_errorsBL
 rvp_aBL ~~ 1*rvp_aBL
 # making the t2 equal to what I made the t1
-prm_percent_correctFU2 ~~ equal("prm_percent_correctBL ~~ 1*prm_percent_correctBL")*prm_percent_correctFU2
-swm_between_errorsFU2 ~~ equal("swm_between_errorsBL ~~ 1*swm_between_errorsBL")*swm_between_errorsFU2
-rvp_aFU2 ~~ equal("rvp_aBL ~~ 1*rvp_aBL")*rvp_aFU2
+prm_percent_correctFU2 ~~ 1*prm_percent_correctFU2
+swm_between_errorsFU2 ~~ 1*swm_between_errorsFU2
+rvp_aFU2 ~~ 1*rvp_aFU2
+
+# Intercepts
+prm_percent_correctBL ~ 1
+swm_between_errorsBL ~ 1
+rvp_aBL ~ 1
+
+prm_percent_correctFU2 ~ 1
+swm_between_errorsFU2 ~ 1
+rvp_aFU2 ~ 1
 
 #correlated cov
 prm_percent_correctBL ~~ 0.8*prm_percent_correctFU2
@@ -711,8 +762,8 @@ swm_between_errorsBL ~~ 0.4*swm_between_errorsFU2
 rvp_aBL ~~ 0.7*rvp_aFU2
 
 # Latent Variable Means
-t1 ~ 0*1
-t2 ~ 1
+t1 ~ 1
+t2 ~ 2
 
 # Latent Variable Variances and Covariance
 t1 ~~ 1*t1
@@ -723,25 +774,120 @@ t1 ~~ 0.5*t2
 
 ```
 
-```{r definining the LCS model with strict measurement invariance}
+```{r definining the LCS model with differing levels of measurement invariance}
 
-LCS_forCFAsim <- '
+LCS_strict <- '
 
-WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           # This specifies the measurement model for WM_T1 
+WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           
+# This specifies the measurement model for WM_T1 
 WM_T2 =~ 1*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2 + equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 
+# this sets the loading the same for t2 as for t1 (weak measurement invariance)
 
+# now adding correlated covariance
 swm_between_errorsBL ~~ swm_between_errorsFU2   # This allows residual covariance on indicator X1 across T1 and T2
 rvp_aBL ~~ rvp_aFU2   # This allows residual covariance on indicator X2 across T1 and T2
 prm_percent_correctBL ~~ prm_percent_correctFU2   # This allows residual covariance on indicator X3 across T1 and T2
 
+# variance of the tasks
 swm_between_errorsBL ~~ swm_between_errorsBL   # This allows residual variance on indicator X1 
 rvp_aBL ~~ rvp_aBL   # This allows residual variance on indicator X2
 prm_percent_correctBL ~~ prm_percent_correctBL   # This allows residual variance on indicator X3
 
+# forcing the variance of the tasks in the 2nd timepoint to be equal to those at T1 (strict measurement invariance)
 swm_between_errorsFU2 ~~ equal("swm_between_errorsBL~~swm_between_errorsBL")*swm_between_errorsFU2  # This allows residual variance on indicator X1 at T2 
 rvp_aFU2 ~~ equal("rvp_aBL~~rvp_aBL")*rvp_aFU2  # This allows residual variance on indicator X2 at T2 
 prm_percent_correctFU2 ~~ equal("prm_percent_correctBL~~prm_percent_correctBL")*prm_percent_correctFU2  # This allows residual variance on indicator X3 at T2
 
+# this is the latent change part
+WM_T2 ~ 1*WM_T1     # This parameter regresses WM_T2 perfectly on WM_T1
+dWM =~ 1*WM_T2     # This defines the latent change score factor as measured perfectly by scores on WM_T2
+dWM ~ 1             # This estimates the intercept of the change score 
+WM_T1 ~  1           # This estimates the intercept of WM_T1 
+
+WM_T2 ~ 0*1          # This constrains the intercept of WM_T2 to 0 (not needed)
+WM_T2 ~~ 0*WM_T2    # This fixes the variance of the WM_T2 to 0  (not needed)
+
+dWM ~~  dWM       # This estimates the variance of the change scores
+WM_T1 ~~ WM_T1    # This estimates the variance of the WM_T1 
+dWM ~~ WM_T1   # This estimates the NEU to COG coupling parameter and the NEU to NEU self-feedback
+
+swm_between_errorsBL~0*1                 # This constrains the intercept of X1 to 0 at T1
+rvp_aBL~1                   # This estimates the intercept of X2 at T1
+prm_percent_correctBL~1                   # This estimates the intercept of X3 at T1
+
+# setting the intercepts to be the same (strong measurement invariance)
+swm_between_errorsFU2~0*1                 # This constrains the intercept of X1 to 0 at T2
+rvp_aFU2~equal("rvp_aBL~1")*1   # This estimates the intercept of X2 at T2
+prm_percent_correctFU2~equal("prm_percent_correctBL~1")*1   # This estimates the intercept of X3 at T2
+'
+
+
+LCS_strong <- '
+
+WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           
+# This specifies the measurement model for WM_T1 
+WM_T2 =~ 1*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2 + equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 
+# this sets the loading the same for t2 as for t1 (weak measurement invariance)
+
+# now adding correlated covariance
+swm_between_errorsBL ~~ swm_between_errorsFU2   # This allows residual covariance on indicator X1 across T1 and T2
+rvp_aBL ~~ rvp_aFU2   # This allows residual covariance on indicator X2 across T1 and T2
+prm_percent_correctBL ~~ prm_percent_correctFU2   # This allows residual covariance on indicator X3 across T1 and T2
+
+# variance of the tasks
+swm_between_errorsBL ~~ swm_between_errorsBL   # This allows residual variance on indicator X1 
+rvp_aBL ~~ rvp_aBL   # This allows residual variance on indicator X2
+prm_percent_correctBL ~~ prm_percent_correctBL   # This allows residual variance on indicator X3
+
+swm_between_errorsFU2 ~~ swm_between_errorsFU2
+rvp_aFU2 ~~ rvp_aFU2
+prm_percent_correctFU2 ~~ prm_percent_correctFU2
+
+# this is the latent change part
+WM_T2 ~ 1*WM_T1     # This parameter regresses WM_T2 perfectly on WM_T1
+dWM =~ 1*WM_T2     # This defines the latent change score factor as measured perfectly by scores on WM_T2
+dWM ~ 1             # This estimates the intercept of the change score 
+WM_T1 ~  1           # This estimates the intercept of WM_T1 
+
+WM_T2 ~ 0*1          # This constrains the intercept of WM_T2 to 0 (not needed)
+WM_T2 ~~ 0*WM_T2    # This fixes the variance of the WM_T2 to 0  (not needed)
+
+dWM ~~  dWM       # This estimates the variance of the change scores
+WM_T1 ~~ WM_T1    # This estimates the variance of the WM_T1 
+dWM ~~ WM_T1   # This estimates the NEU to COG coupling parameter and the NEU to NEU self-feedback
+
+swm_between_errorsBL~0*1                 # This constrains the intercept of X1 to 0 at T1
+rvp_aBL~1                   # This estimates the intercept of X2 at T1
+prm_percent_correctBL~1                   # This estimates the intercept of X3 at T1
+
+# setting the intercepts to be the same (strong measurement invariance)
+swm_between_errorsFU2~0*1                 # This constrains the intercept of X1 to 0 at T2
+rvp_aFU2~equal("rvp_aBL~1")*1   # This estimates the intercept of X2 at T2
+prm_percent_correctFU2~equal("prm_percent_correctBL~1")*1   # This estimates the intercept of X3 at T2
+'
+
+LCS_weak<- '
+
+WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           
+# This specifies the measurement model for WM_T1 
+WM_T2 =~ 1*swm_between_errorsFU2 + equal("WM_T1=~rvp_aBL")*rvp_aFU2 + equal("WM_T1=~prm_percent_correctBL")*prm_percent_correctFU2 
+# this sets the loading the same for t2 as for t1 (weak measurement invariance)
+
+# now adding correlated covariance
+swm_between_errorsBL ~~ swm_between_errorsFU2   # This allows residual covariance on indicator X1 across T1 and T2
+rvp_aBL ~~ rvp_aFU2   # This allows residual covariance on indicator X2 across T1 and T2
+prm_percent_correctBL ~~ prm_percent_correctFU2   # This allows residual covariance on indicator X3 across T1 and T2
+
+# variance of the tasks
+swm_between_errorsBL ~~ swm_between_errorsBL   # This allows residual variance on indicator X1 
+rvp_aBL ~~ rvp_aBL   # This allows residual variance on indicator X2
+prm_percent_correctBL ~~ prm_percent_correctBL   # This allows residual variance on indicator X3
+
+swm_between_errorsFU2 ~~ swm_between_errorsFU2
+rvp_aFU2 ~~ rvp_aFU2
+prm_percent_correctFU2 ~~ prm_percent_correctFU2
+
+# this is the latent change part
 WM_T2 ~ 1*WM_T1     # This parameter regresses WM_T2 perfectly on WM_T1
 dWM =~ 1*WM_T2     # This defines the latent change score factor as measured perfectly by scores on WM_T2
 dWM ~ 1             # This estimates the intercept of the change score 
@@ -759,18 +905,61 @@ rvp_aBL~1                   # This estimates the intercept of X2 at T1
 prm_percent_correctBL~1                   # This estimates the intercept of X3 at T1
 
 swm_between_errorsFU2~0*1                 # This constrains the intercept of X1 to 0 at T2
-rvp_aFU2~equal("rvp_aBL~1")*1   # This estimates the intercept of X2 at T2
-prm_percent_correctFU2~equal("prm_percent_correctBL~1")*1   # This estimates the intercept of X3 at T2
+rvp_aFU2~1   # This estimates the intercept of X2 at T2
+prm_percent_correctFU2~1   # This estimates the intercept of X3 at T2
 '
+
+LCS_configural <- '
+
+WM_T1 =~ 1*swm_between_errorsBL + rvp_aBL + prm_percent_correctBL                           
+# This specifies the measurement model for WM_T1 
+WM_T2 =~ 1*swm_between_errorsFU2 + rvp_aFU2 + prm_percent_correctFU2 
+
+# now adding correlated covariance
+swm_between_errorsBL ~~ swm_between_errorsFU2   # This allows residual covariance on indicator X1 across T1 and T2
+rvp_aBL ~~ rvp_aFU2   # This allows residual covariance on indicator X2 across T1 and T2
+prm_percent_correctBL ~~ prm_percent_correctFU2   # This allows residual covariance on indicator X3 across T1 and T2
+
+# variance of the tasks
+swm_between_errorsBL ~~ swm_between_errorsBL   # This allows residual variance on indicator X1 
+rvp_aBL ~~ rvp_aBL   # This allows residual variance on indicator X2
+prm_percent_correctBL ~~ prm_percent_correctBL   # This allows residual variance on indicator X3
+swm_between_errorsFU2 ~~ swm_between_errorsFU2
+rvp_aFU2 ~~ rvp_aFU2
+prm_percent_correctFU2 ~~ prm_percent_correctFU2
+
+# this is the latent change part
+WM_T2 ~ 1*WM_T1     # This parameter regresses WM_T2 perfectly on WM_T1
+dWM =~ 1*WM_T2     # This defines the latent change score factor as measured perfectly by scores on WM_T2
+dWM ~ 1             # This estimates the intercept of the change score 
+WM_T1 ~  1           # This estimates the intercept of WM_T1 
+
+WM_T2 ~ 0*1          # This constrains the intercept of WM_T2 to 0 (not needed)
+WM_T2 ~~ 0*WM_T2    # This fixes the variance of the WM_T2 to 0  (not needed)
+
+dWM ~~  dWM       # This estimates the variance of the change scores
+WM_T1 ~~ WM_T1    # This estimates the variance of the WM_T1 
+dWM ~~ WM_T1   # This estimates the NEU to COG coupling parameter and the NEU to NEU self-feedback
+
+swm_between_errorsBL~0*1                 # This constrains the intercept of X1 to 0 at T1
+rvp_aBL~1                   # This estimates the intercept of X2 at T1
+prm_percent_correctBL~1                   # This estimates the intercept of X3 at T1
+
+# setting the intercepts to be the same (strong measurement invariance)
+swm_between_errorsFU2~0*1                 # This constrains the intercept of X1 to 0 at T2
+rvp_aFU2~1   # This estimates the intercept of X2 at T2
+prm_percent_correctFU2~1   # This estimates the intercept of X3 at T2
+'
+
 ```
 
-```{r function for parallel simulation, eval=F}
+```{r function for parallel simulation}
 
-func_pvals <- function(model, s){
+func_pvals <- function(data_model, testing_model, num_samples){
   library(lavaan)
   
-  simdatCFA <- simulateData(cfa_strict_invariance, sample.nobs = s, meanstructure = T) #Simulate data
-  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+  simdatCFA <- simulateData(data_model, sample.nobs = num_samples, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(testing_model, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
     
   if (fit_LCS_forCFAsim@Fit@converged==F) {
     pval_out <- NA
@@ -780,10 +969,26 @@ func_pvals <- function(model, s){
   return(pval_out)
 }
 
-func_rmsea <- function(model, s){
+func_pvals_configural <- function(data_model, testing_model, num_samples){
   library(lavaan)
-  simdatCFA <- simulateData(model, sample.nobs = s, meanstructure = T) #Simulate data
-  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+  
+  simdatCFA <- simulateData(data_model, sample.nobs = num_samples, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(testing_model, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+    
+  if (fit_LCS_forCFAsim@Fit@converged==F) {
+    pval_out <- NA
+  } else {
+    pval_out <- parameterestimates(fit_LCS_forCFAsim)[24,][,7]
+  }
+  return(pval_out)
+}
+
+
+func_rmsea <- function(data_model, testing_model, num_samples){
+  library(lavaan)
+  
+  simdatCFA <- simulateData(data_model, sample.nobs = num_samples, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(testing_model, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
   
   if (fit_LCS_forCFAsim@Fit@converged==F) {
     rmsea <- NA
@@ -793,10 +998,10 @@ func_rmsea <- function(model, s){
   return(rmsea)
 }
 
-func_cfi <- function(model, s){
+func_cfi <- function(data_model, testing_model, num_samples){
   library(lavaan)
-  simdatCFA <- simulateData(model, sample.nobs = s, meanstructure = T) #Simulate data
-  fit_LCS_forCFAsim <- lavaan(LCS_forCFAsim, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
+  simdatCFA <- simulateData(data_model, sample.nobs = num_samples, meanstructure = T) #Simulate data
+  fit_LCS_forCFAsim <- lavaan(testing_model, data = simdatCFA, estimator='mlr', fixed.x=FALSE, missing='fiml')
 
   if (fit_LCS_forCFAsim@Fit@converged==F) {
     cfi <- NA
@@ -808,110 +1013,121 @@ func_cfi <- function(model, s){
 
 ```
 
-```{r RMSEA simulating data parallel, eval = F}
+```{r RMSEA simulating data parallel, eval = F, include=F}
 
 #setup parallel backend to use many processors
 cores=detectCores()
-
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_basic_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_rmsea(cfa_basic, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
-
-# now strong
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_strong_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_rmsea(cfa_strong_invariance, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
 
 # now strict
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_strict_rmsea <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_rmsea(cfa_strict_invariance, 200) #calling a function
+   tempMatrix = func_rmsea(cfa_strict_invariance, LCS_strict, 200) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
 }
 stopCluster(cl)
 
-cfa_basic_rmsea <- as.data.frame(as.vector(cfa_basic_rmsea))
-colnames(cfa_basic_rmsea) <- "rmsea"
-cfa_strong_rmsea <- as.data.frame(as.vector(cfa_strong_rmsea))
-colnames(cfa_strong_rmsea) <- "rmsea"
 cfa_strict_rmsea <- as.data.frame(as.vector(cfa_strict_rmsea))
 colnames(cfa_strict_rmsea) <- "rmsea"
-
-
-rmsea_basic <- ggplot(cfa_basic_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
-
-rmsea_strict <- ggplot(cfa_strong_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
 
 rmsea_strong <- ggplot(cfa_strict_rmsea, aes(x=rmsea)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
 
 ```
 
-
-```{r CFI simulating data parallel, eval = F}
+```{r CFI simulating data parallel, eval = F, include=F}
 
 #setup parallel backend to use many processors
 cores=detectCores()
-
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_basic_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_cfi(cfa_basic, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
-
-# now strong
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_strong_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_cfi(cfa_strong_invariance, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
 
 # now strict
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_strict_cfi <- foreach(i=1:1000, .combine=cbind) %dopar% {
-   tempMatrix = func_cfi(cfa_strict_invariance, 200) #calling a function
+   tempMatrix = func_cfi(cfa_strict_invariance,LCS_strict, 200) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
 }
 stopCluster(cl)
 
-cfa_basic_cfi <- as.data.frame(as.vector(cfa_basic_cfi))
-colnames(cfa_basic_cfi) <- "cfi"
-cfa_strong_cfi <- as.data.frame(as.vector(cfa_strong_cfi))
-colnames(cfa_strong_cfi) <- "cfi"
 cfa_strict_cfi <- as.data.frame(as.vector(cfa_strict_cfi))
 colnames(cfa_strict_cfi) <- "cfi"
 
-
-cfi_basic <- ggplot(cfa_basic_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
-
 cfi_strict <- ggplot(cfa_strong_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+```
 
-cfi_strong <- ggplot(cfa_strict_cfi, aes(x=cfi)) + geom_histogram() + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+
+```{r p-val on self-feedback covariance simulating data parallel, eval = F}
+
+#setup parallel backend to use many processors
+cores=detectCores()
+
+# now strict
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strictLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strict, 100) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_strongLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strong, 100) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_weakLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_weak, 100) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+cfa_configuralLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals_configural(cfa_strict_invariance, LCS_configural, 100) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# the data is a list lets make it a df
+cfa_strictLCS_pvals <- as.data.frame(as.vector(cfa_strictLCS_pvals))
+colnames(cfa_strictLCS_pvals) <- "pvals"
+cfa_strongLCS_pvals <- as.data.frame(as.vector(cfa_strongLCS_pvals))
+colnames(cfa_strongLCS_pvals) <- "pvals"
+cfa_weakLCS_pvals <- as.data.frame(as.vector(cfa_weakLCS_pvals))
+colnames(cfa_weakLCS_pvals) <- "pvals"
+cfa_configuralLCS_pvals <- as.data.frame(as.vector(cfa_configuralLCS_pvals))
+colnames(cfa_configuralLCS_pvals) <- "pvals"
+
+# lets put it in one df for plotting
+df <- data.frame(type_invariance = c(rep("strict", dim(cfa_strictLCS_pvals)[1]), rep("strong", dim(cfa_strongLCS_pvals)[1]), rep("weak", dim(cfa_weakLCS_pvals)[1]), rep("configural", dim(cfa_configuralLCS_pvals)[1])),
+                 pvals = c(cfa_strictLCS_pvals$pvals, cfa_strongLCS_pvals$pvals, cfa_weakLCS_pvals$pvals, cfa_configuralLCS_pvals$pvals))
+
+
+pvals_strict <- ggplot(df, aes(x=pvals, color = type_invariance)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
+```
+
+```{r plotting the p-vals from LCS model with strict measurement invariance}
+
+pvals_strict + labs(title = "Self-feedback parameter significance")
+
+# too get the intercept false positives showing you should free up the intercept of t2 ~ 1 and think about the meanstructure = T
 
 ```
 
@@ -921,53 +1137,76 @@ cfi_strong <- ggplot(cfa_strict_cfi, aes(x=cfi)) + geom_histogram() + theme_mini
 #setup parallel backend to use many processors
 cores=detectCores()
 
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_basic_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_basic, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
-
-# now strong
-cl <- makeCluster(cores[1]-1) #not to overload your computer
-registerDoParallel(cl)
-cfa_strong_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_strong_invariance, 200) #calling a function
-   #do other things if you want
-
-   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
-}
-stopCluster(cl)
-
 # now strict
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
-cfa_strict_pvals <- foreach(i=1:5000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_strict_invariance, 200) #calling a function
+strongcfa_strictLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_weak_invariance, LCS_strict, 200) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
 }
 stopCluster(cl)
 
-cfa_basic_pvals <- as.data.frame(as.vector(cfa_basic_pvals))
-colnames(cfa_basic_pvals) <- "pvals"
-cfa_strong_pvals <- as.data.frame(as.vector(cfa_strong_pvals))
-colnames(cfa_strong_pvals) <- "pvals"
-cfa_strict_pvals <- as.data.frame(as.vector(cfa_strict_pvals))
-colnames(cfa_strict_pvals) <- "pvals"
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+strongcfa_strongLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_weak_invariance, LCS_strong, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+strongcfa_weakLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals(cfa_weak_invariance, LCS_weak, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+cl <- makeCluster(cores[1]-1) #not to overload your computer
+registerDoParallel(cl)
+strongcfa_configuralLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
+   tempMatrix = func_pvals_configural(cfa_weak_invariance, LCS_configural, 200) #calling a function
+   #do other things if you want
+
+   tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
+}
+stopCluster(cl)
+
+# the data is a list lets make it a df
+strongcfa_strictLCS_pvals <- as.data.frame(as.vector(strongcfa_strictLCS_pvals))
+colnames(strongcfa_strictLCS_pvals) <- "pvals"
+strongcfa_strongLCS_pvals <- as.data.frame(as.vector(strongcfa_strongLCS_pvals))
+colnames(strongcfa_strongLCS_pvals) <- "pvals"
+strongcfa_weakLCS_pvals <- as.data.frame(as.vector(strongcfa_weakLCS_pvals))
+colnames(strongcfa_weakLCS_pvals) <- "pvals"
+strongcfa_configuralLCS_pvals <- as.data.frame(as.vector(strongcfa_configuralLCS_pvals))
+colnames(strongcfa_configuralLCS_pvals) <- "pvals"
+
+# lets put it in one df for plotting
+df <- data.frame(type_invariance = c(rep("strict", dim(strongcfa_strictLCS_pvals)[1]), rep("strong", dim(strongcfa_strongLCS_pvals)[1]), rep("weak", dim(strongcfa_weakLCS_pvals)[1]), rep("configural", dim(strongcfa_configuralLCS_pvals)[1])),
+                 pvals = c(strongcfa_strictLCS_pvals$pvals, strongcfa_strongLCS_pvals$pvals, strongcfa_weakLCS_pvals$pvals, strongcfa_configuralLCS_pvals$pvals))
 
 
-pvals_basic <- ggplot(cfa_basic_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
-
-pvals_strict <- ggplot(cfa_strong_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
-
-pvals_strong <- ggplot(cfa_strict_pvals, aes(x=pvals)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
-
+pvals_strong <- ggplot(df, aes(x=pvals, color = type_invariance)) + theme_minimal() + geom_density(alpha=.2, fill="#FF6666") 
 ```
+
+```{r pvals strong}
+```
+
+
+#### Change controlled for T1
+As mentioned by [Andy on Stackoverflow](!https://stats.stackexchange.com/questions/15713/is-it-valid-to-include-a-baseline-measure-as-control-variable-when-testing-the-e)) and [Paul Allison, 1990](!https://www.jstor.org/stable/271083?origin=crossref&seq=1#page_scan_tab_contents) this usually never makes any sense. In a non-randomized setting this will lead to the same result as the residual approach. Yet in a LCS model with multiple measurements you may be interested in this effect, which would test whether the change is being driven by the self-feedback parameter. For example in situations in which you think T1 casually leads to differencitated change. For example it is a well replicated effect that subjects with more cortical thickness in early adolensence (T1) are the ones with more cortical loss (i.e. change). If we know that our IV of interest (e.g. affection of asparagus) and cortical thickness in T1 is related, a relationship between affection of asparagus and cortical thickness change could be entirely drive throught the self-feedback parameter. 
+
+## TLDR
+In non-randomized models you have to make the bad choice between 1) not controlling for time-invariant covariates or 2) having regression to the mean confound your results. If you want to say something about how improvement relates to something else (your IV of interest) than you will be stuck with subtraction two values and have to deal with regression to the mean. The only way to solve this is 1) have a randomized control trial (in some cases impossible), 2) have multiple tasks probing the same underlying construct or 3) have more than two time-points. 
+
+
 
 
 
