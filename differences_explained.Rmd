@@ -13,11 +13,13 @@ output: html_document
 - Change name on legends, change colors for the two, and **make sure** they are consistant.
 - Write a small intro just discussing the two methods and you can relate them to their color for graphs.
 
-# Questions for Timo
+# Questions for Kimmo
 - how to simulate a true rich-get-richer false-positive in the residual-approach
 - best way to simulate LCS model breaking by loosing measurement invariance (I can do this for weak yet I don't know how to for strong)
-- directionality on false-positives
-- could ask him about the non-sensical simulation
+For both of these he was really helpful in reminding me that t2 = t1 + change, so I can just simulate change and add it to T1 to get T2!! (the covariance between T1 & change would be exactly what I am trying to test), ofc you can have a random mean increase that is not related to where they started at T1
+
+- directionality on false-positives (as a solution?)
+potentially he agrees: A negative coef when subtraction is used could be regression to the mean, a positive coef with the residual approach could be the paradox
 
 
 ```{r setup, include=FALSE, echo=F}
@@ -58,11 +60,15 @@ $\Delta_{i} \sim {PGS}_{i}$
 <br>
 
 #### Subtraction as regression (important for the Latent Change score model)
-
+<br>
 ${t2}_{i} = {t1}_{i} + \Delta_{i}$
+<br>
 $\Delta_{i} = {t2}_{i} - {t1}_{i}$
+<br>
 $\Delta_{i} \sim  (\beta_{0i} + \beta_{1i} * {T2}_{i} + \epsilon_{t2i}) - (\beta_{0i} + \beta_{1i} * {T1}_{i} + \epsilon_{t1i})$
+<br>
 $\Delta_{i} \sim  \beta_{1i} * ({T2}_{i} - {T1}_{i}) + \epsilon_{T2i}- \epsilon_{T1i})$
+<br>
 
 ### Regression to the mean
 
@@ -1059,7 +1065,7 @@ cfi_strict <- ggplot(cfa_strong_cfi, aes(x=cfi)) + geom_histogram() + theme_mini
 ```
 
 
-```{r p-val on self-feedback covariance simulating data parallel, eval = F}
+```{r p-val on self-feedback covariance simulating data parallel, eval = T}
 
 #setup parallel backend to use many processors
 cores=detectCores()
@@ -1068,7 +1074,7 @@ cores=detectCores()
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_strictLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strict, 100) #calling a function
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strict, 150) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
@@ -1078,7 +1084,7 @@ stopCluster(cl)
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_strongLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strong, 100) #calling a function
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_strong, 150) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
@@ -1088,7 +1094,7 @@ stopCluster(cl)
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_weakLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals(cfa_strict_invariance, LCS_weak, 100) #calling a function
+   tempMatrix = func_pvals(cfa_strict_invariance, LCS_weak, 150) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
@@ -1098,7 +1104,7 @@ stopCluster(cl)
 cl <- makeCluster(cores[1]-1) #not to overload your computer
 registerDoParallel(cl)
 cfa_configuralLCS_pvals <- foreach(i=1:10000, .combine=cbind) %dopar% {
-   tempMatrix = func_pvals_configural(cfa_strict_invariance, LCS_configural, 100) #calling a function
+   tempMatrix = func_pvals_configural(cfa_strict_invariance, LCS_configural, 150) #calling a function
    #do other things if you want
 
    tempMatrix #Equivalent to finalMatrix = cbind(finalMatrix, tempMatrix)
